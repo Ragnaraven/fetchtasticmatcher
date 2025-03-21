@@ -10,36 +10,49 @@ export default async function LoginPage() {
 
   return (
     <div className="hero min-h-screen bg-base-200">
-      <div className="hero-content flex-col">
-        <h1 className="text-4xl font-bold text-base-content">Login</h1>
+      <div className="hero-content flex-col lg:gap-8">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-base-content font-title mb-2">
+            Welcome to FetchtasticMatch
+          </h1>
+          <p className="text-base-content/70 font-body">
+            Let's find your perfect companion
+          </p>
+        </div>
+
         <div className="card flex-shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
           <form className="card-body" action={login}>
             <div className="form-control">
               <label className="label">
-                <span className="label-text text-base-content">Name</span>
+                <span className="label-text text-base-content font-title">Name</span>
               </label>
               <input 
                 name="name"
                 type="text"
-                placeholder="name"
-                className="input input-bordered text-base-content bg-base-100"
+                placeholder="Enter your name"
+                className="input input-bordered text-base-content bg-base-100 font-body"
                 required 
               />
             </div>
             <div className="form-control">
               <label className="label">
-                <span className="label-text text-base-content">Email</span>
+                <span className="label-text text-base-content font-title">Email</span>
               </label>
               <input 
                 name="email"
                 type="email" 
-                placeholder="email" 
-                className="input input-bordered text-base-content bg-base-100" 
+                placeholder="Enter your email" 
+                className="input input-bordered text-base-content bg-base-100 font-body" 
                 required 
               />
             </div>
-            <div className="form-control mt-6">
-              <button type="submit" className="btn btn-primary">Login</button>
+            <div className="form-control mt-8">
+              <button 
+                type="submit" 
+                className="btn btn-primary font-title text-lg"
+              >
+                Start Matching
+              </button>
             </div>
           </form>
         </div>

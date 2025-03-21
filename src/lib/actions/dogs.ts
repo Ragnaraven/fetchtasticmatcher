@@ -163,3 +163,39 @@ export async function fetchDogsByIds(dogIds: string[]): Promise<Dog[]> {
         throw error;
     }
 }
+
+interface Match {
+    match: string;
+}
+
+export async function matchDog(dogIds: string[]): Promise<Match> {
+    try {
+        if (!dogIds.length) {
+            throw new Error('No dogs provided for matching');
+        }
+
+        const url = `${process.env.BASE_URL}/dogs/match`;
+        const response = await authenticatedFetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dogIds),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[matchDog] API Error:', {
+                status: response.status,
+                statusText: response.statusText,
+                responseBody: errorText,
+            });
+            throw new Error(`Failed to match dog: ${response.status} ${response.statusText}\n${errorText}`);
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error('[matchDog] Error:', error);
+        throw error;
+    }
+}

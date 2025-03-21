@@ -8,10 +8,10 @@ import { parseSearchParams } from '@/lib/utils/searchParams';
 
 function SearchingDogs() {
     return (
-        <div className="flex flex-col items-center justify-center p-8 space-y-4 h-full flex-grow">
+        <div className="flex flex-col items-center justify-center p-8 space-y-4">
             <div className="loading loading-ring loading-lg text-primary"></div>
             <div className="flex items-center space-x-2">
-                <span className="text-lg font-medium animate-pulse">
+                <span className="text-lg font-medium animate-pulse text-base-content">
                     Searching for your perfect companion
                 </span>
                 <span className="animate-bounce delay-100">🐕</span>

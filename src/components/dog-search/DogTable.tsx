@@ -9,6 +9,8 @@ import {
 import { EnhancedDog } from '@/models/enhanced-dog';
 import { useFavorites } from '../../contexts/FavoritesContext';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface DogTableProps {
   dogs: EnhancedDog[];
@@ -18,7 +20,7 @@ interface DogTableProps {
 }
 
 export function DogTable({ dogs, total, next, prev }: DogTableProps) {
-  const { favorites, toggleFavorite } = useFavorites();
+  const { favorites, toggleFavorite, generateMatch } = useFavorites();
   const router = useRouter();
 
   const handleRowClick = (dogId: string) => (e: React.MouseEvent) => {
@@ -114,8 +116,11 @@ export function DogTable({ dogs, total, next, prev }: DogTableProps) {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="h-full flex flex-col"
+    >
       <div className="flex-none">
         <Pagination 
           prev={prev} 
@@ -134,7 +139,7 @@ export function DogTable({ dogs, total, next, prev }: DogTableProps) {
                 {headerGroup.headers.map((header, index) => (
                   <th
                     key={header.id}
-                    className={`text-xs font-medium uppercase tracking-wider text-base-content py-4
+                    className={`text-xs font-medium uppercase tracking-wider text-base-content py-4 font-title
                       ${index === 0 ? 'w-12 px-0 sm:static sticky left-0 bg-base-200 z-30 text-center' : 'text-left px-6'}
                       ${index === 1 ? 'w-32' : ''}`}
                   >
@@ -147,32 +152,119 @@ export function DogTable({ dogs, total, next, prev }: DogTableProps) {
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-base-200">
-            {table.getRowModel().rows.map(row => (
-              <tr 
-                key={row.id} 
-                onClick={handleRowClick(row.original.dog.id)}
-                className="group hover:bg-base-200 cursor-pointer"
-              >
-                {row.getVisibleCells().map((cell, index) => (
-                  <td 
-                    key={cell.id} 
-                    className={`whitespace-nowrap
-                      ${index === 0 
-                        ? 'w-12 p-0 sm:static sticky left-0 bg-base-100 group-hover:bg-base-200 z-20' 
-                        : index === 1 
-                        ? 'w-32 p-0'
-                        : 'px-6 py-4'}`}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
+          <AnimatePresence mode="popLayout">
+            <motion.tbody 
+              className="divide-y divide-base-200"
+              layout
+            >
+              {table.getRowModel().rows.map((row, index) => (
+                <motion.tr 
+                  key={row.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ 
+                    duration: 0.3,
+                    delay: index * 0.05 // Stagger effect
+                  }}
+                  onClick={handleRowClick(row.original.dog.id)}
+                  className="group hover:bg-base-200 cursor-pointer"
+                >
+                  {row.getVisibleCells().map((cell, index) => (
+                    <td 
+                      key={cell.id} 
+                      className={`whitespace-nowrap
+                        ${index === 0 
+                          ? 'w-12 p-0 sm:static sticky left-0 bg-base-100 group-hover:bg-base-200 z-20' 
+                          : index === 1 
+                          ? 'w-32 p-0'
+                          : 'px-6 py-4'}`}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </motion.tr>
+              ))}
+            </motion.tbody>
+          </AnimatePresence>
         </table>
       </div>
-    </div>
+
+      <AnimatePresence>
+        {favorites.size > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.5 }}  // Slowed down
+            className="flex-none mt-6 px-4 pb-2 flex flex-col gap-4 items-center"
+          >
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => generateMatch()}
+              className="btn btn-primary border-1 border-base-content btn-xl shadow-lg text-lg font-medium gap-2 min-w-80 relative overflow-hidden"
+            >
+              <motion.span 
+                className="relative z-10"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{
+                  duration: 0.5,
+                  ease: "easeInOut",
+                  staggerChildren: 0.05
+                }}
+              >
+                {(favorites.size === 1 
+                  ? "Find your perfect match" 
+                  : `Find your match from ${favorites.size} favorites`).split('').map((char, index) => (
+                  <motion.span
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.3,
+                      delay: index * 0.03
+                    }}
+                  >
+                    {char}
+                  </motion.span>
+                ))}
+              </motion.span>
+              <div className="flex items-center gap-1">
+                <motion.span 
+                  className="text-2xl relative z-10" 
+                  aria-hidden="true"
+                  animate={{
+                    y: [0, -8, 0]
+                  }}
+                  transition={{
+                    duration: 1,
+                    delay: 0.5, // Offset for alternating effect
+                    repeat: Infinity,
+                    repeatType: "reverse",
+                    ease: "easeInOut"
+                  }}
+                >
+                  🐾
+                </motion.span>
+              </div>
+              <motion.div
+                className="absolute inset-0 bg-white"
+                animate={{
+                  opacity: [0, 0.1, 0]
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+              />
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 

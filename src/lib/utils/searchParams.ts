@@ -23,8 +23,6 @@ export const queryStringToArray = (str: string | null): string[] => {
  * Handles arrays as CSV strings, numbers, and sort parameters
  */
 export const parseSearchParams = (params: { [key: string]: string | string[] | undefined } = {}): Partial<DogSearchParams> => {
-    console.log('parseSearchParams - Raw input:', params);
-    
     const getValue = (key: string): string | undefined => {
         const value = params[key];
         if (!value) return undefined;
@@ -59,7 +57,6 @@ export const parseSearchParams = (params: { [key: string]: string | string[] | u
         sort: getValue('sort') as `${SortOn}:${SortOrder}` | undefined,
     };
 
-    console.log('parseSearchParams - Parsed output:', parsed);
     return parsed;
 };
 

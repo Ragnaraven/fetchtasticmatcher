@@ -1,15 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
-
 export function WelcomeModal() {
-  useEffect(() => {
-    // Open modal on mount
-    (document.getElementById('welcome_modal') as HTMLDialogElement)?.showModal();
-  }, []);
-
   return (
-    <dialog id="welcome_modal" className="modal modal-bottom sm:modal-middle">
+    <dialog id="welcome_modal" className="modal">
       <div className="modal-box">
         <h1 className="text-3xl lg:text-4xl font-bold text-primary text-center">
           🐾 Fetch Your Perfect Match

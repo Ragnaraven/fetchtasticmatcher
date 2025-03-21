@@ -120,12 +120,12 @@ export function DogSearchFilters({ breeds }: DogSearchFiltersProps) {
         searchParams.get('size') !== '25';
 
     return (
-        <div className="sticky top-0 bg-base-100 z-10 flex flex-col gap-4 w-full pb-2 border-b-1 border-base-content">
+        <div className="sticky top-0 bg-base-100 z-10 flex flex-col gap-4 w-full pb-4 border-b-1 border-base-content">
             <div className="flex flex-row items-center justify-between">
                 <div className="dropdown">
                     <label tabIndex={0} className="btn btn-primary min-w-24 text-nowrap">Select Breeds</label>
                     <div tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-64">
-                        <div className="max-h-[60vh] overflow-y-auto">
+                        <div className="max-h-[60vh] overflow-y-auto text-base-content">
                             <div className="sticky top-0 bg-base-100 border-b border-base-200 pb-2 mb-2 z-10">
                                 <button
                                     className="btn btn-sm btn-block"
