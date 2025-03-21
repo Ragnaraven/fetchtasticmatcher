@@ -1,7 +1,7 @@
 'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import { DogSearchParams, SortOn, SortOrder } from '@/lib/actions/dogs';
-import { useState, useEffect } from 'react';
 import { useDebounceUrl } from '@/hooks/useDebounceUrl';
 import { queryStringToArray, arrayToQueryString } from '@/lib/utils/searchParams';
 
@@ -14,6 +14,9 @@ export function DogSearchFilters({ breeds }: DogSearchFiltersProps) {
     
     const initialBreeds = queryStringToArray(searchParams.get('breeds'));
     const [selectedBreeds, setSelectedBreeds] = useState<string[]>(initialBreeds);
+    
+    const [ageMin, setAgeMin] = useState(searchParams.get('ageMin') || '');
+    const [ageMax, setAgeMax] = useState(searchParams.get('ageMax') || '');
     
     useEffect(() => {
         const urlBreeds = queryStringToArray(searchParams.get('breeds'));
@@ -69,6 +72,45 @@ export function DogSearchFilters({ breeds }: DogSearchFiltersProps) {
         updateUrl(params);
     };
 
+    // Create a debounced version of handleAgeChange
+    const debouncedAgeChange = useCallback(
+        debounce((key: 'ageMin' | 'ageMax', value: string) => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.delete('from');
+            
+            if (value === '') {
+                params.delete(key);
+            } else {
+                params.set(key, value);
+            }
+
+            updateUrl(params);
+        }, 500),
+        [searchParams, updateUrl]
+    );
+
+    // Update local state immediately and trigger debounced URL update
+    const handleAgeInputChange = (key: 'ageMin' | 'ageMax', value: string) => {
+        const numValue = value === '' ? '' : Math.max(0, parseInt(value));
+        
+        if (key === 'ageMin') {
+            setAgeMin(String(numValue));
+            // If min is greater than max, update max
+            if (numValue !== '' && ageMax !== '' && parseInt(ageMax) < numValue) {
+                setAgeMax(String(numValue));
+                debouncedAgeChange('ageMax', String(numValue));
+            }
+        } else {
+            setAgeMax(String(numValue));
+            // If max is less than min, update min
+            if (numValue !== '' && ageMin !== '' && parseInt(ageMin) > numValue) {
+                setAgeMin(String(numValue));
+                debouncedAgeChange('ageMin', String(numValue));
+            }
+        }
+        debouncedAgeChange(key, String(numValue));
+    };
+
     const sortedBreeds = [...breeds].sort((a, b) => a.localeCompare(b));
 
     const isFiltersActive = selectedBreeds.length > 0 || 
@@ -78,13 +120,13 @@ export function DogSearchFilters({ breeds }: DogSearchFiltersProps) {
         searchParams.get('size') !== '25';
 
     return (
-        <div className="sticky top-0 bg-base-100 z-10 flex flex-col gap-4 w-full pb-2 mb-2 border-b-1 border-base-content">
+        <div className="sticky top-0 bg-base-100 z-10 flex flex-col gap-4 w-full pb-2 border-b-1 border-base-content">
             <div className="flex flex-row items-center justify-between">
                 <div className="dropdown">
                     <label tabIndex={0} className="btn btn-primary min-w-24 text-nowrap">Select Breeds</label>
                     <div tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-64">
                         <div className="max-h-[60vh] overflow-y-auto">
-                            <div className="sticky top-0 bg-base-100 border-b border-base-200 pb-2 mb-2">
+                            <div className="sticky top-0 bg-base-100 border-b border-base-200 pb-2 mb-2 z-10">
                                 <button
                                     className="btn btn-sm btn-block"
                                     onClick={handleClearBreeds}
@@ -118,7 +160,7 @@ export function DogSearchFilters({ breeds }: DogSearchFiltersProps) {
             </div>
 
             {selectedBreeds.length > 0 && (
-                <div className="w-full h-[60px] overflow-y-auto text-base-content/35 p-2 border-1 rounded-lg border-base-300 bg-base-200/50"> 
+                <div className="w-full h-[74px] overflow-y-auto text-base-content p-2 border-1 rounded-lg border-base-300 bg-base-200/50"> 
                     <div className="flex flex-wrap gap-2">
                         {selectedBreeds.map(breed => (
                             <div key={breed} className="badge badge-primary gap-2 shrink-0">
@@ -139,17 +181,21 @@ export function DogSearchFilters({ breeds }: DogSearchFiltersProps) {
                 <div className="flex-none flex gap-2 items-center">
                     <input
                         type="number"
+                        min="0"
                         placeholder="Min Age"
-                        value={searchParams.get('ageMin') || ''}
-                        onChange={(e) => handleFilterChange('ageMin', e.target.value)}
+                        value={ageMin}
+                        onChange={(e) => handleAgeInputChange('ageMin', e.target.value)}
+                        onBlur={(e) => debouncedAgeChange.flush()}
                         className="input input-bordered w-24 text-base-content bg-base-100"
                     />
                     <span className="text-base-content">to</span>
                     <input
                         type="number"
+                        min="0"
                         placeholder="Max Age"
-                        value={searchParams.get('ageMax') || ''}
-                        onChange={(e) => handleFilterChange('ageMax', e.target.value)}
+                        value={ageMax}
+                        onChange={(e) => handleAgeInputChange('ageMax', e.target.value)}
+                        onBlur={(e) => debouncedAgeChange.flush()}
                         className="input input-bordered w-24 text-base-content bg-base-100"
                     />
                 </div>
@@ -214,4 +260,31 @@ export function parseSearchParams(params: { [key: string]: string | string[] | u
         // Sort
         sort: params.sort as `${SortOn}:${SortOrder}` | undefined,
     };
+}
+
+// Add this debounce utility function at the top of the file
+function debounce<T extends (...args: any[]) => void>(
+    func: T,
+    wait: number
+): T & { flush: () => void } {
+    let timeout: NodeJS.Timeout | null = null;
+    
+    const debounced = (...args: Parameters<T>) => {
+        if (timeout) {
+            clearTimeout(timeout);
+        }
+        timeout = setTimeout(() => {
+            func(...args);
+            timeout = null;
+        }, wait);
+    };
+
+    debounced.flush = () => {
+        if (timeout) {
+            clearTimeout(timeout);
+            timeout = null;
+        }
+    };
+
+    return debounced as T & { flush: () => void };
 }

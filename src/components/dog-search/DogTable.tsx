@@ -6,12 +6,12 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Dog } from '@/lib/actions/dogs';
+import { EnhancedDog } from '@/models/enhanced-dog';
 import { useFavorites } from '../../contexts/FavoritesContext';
 import { useRouter } from 'next/navigation';
 
 interface DogTableProps {
-  dogs: Dog[];
+  dogs: EnhancedDog[];
   total: number;
   next: string | null;
   prev: string | null;
@@ -29,10 +29,11 @@ export function DogTable({ dogs, total, next, prev }: DogTableProps) {
     toggleFavorite(dogId);
   };
 
-  const columnHelper = createColumnHelper<Dog>();
+  const columnHelper = createColumnHelper<EnhancedDog>();
 
   const columns = [
-    columnHelper.accessor('id', {
+    columnHelper.accessor(row => row.dog.id, {
+      id: 'favorite',
       header: 'Fav',
       cell: (info) => (
         <div className="w-12 flex justify-center">
@@ -52,7 +53,7 @@ export function DogTable({ dogs, total, next, prev }: DogTableProps) {
         </div>
       ),
     }),
-    columnHelper.accessor('img', {
+    columnHelper.accessor(row => row.dog.img, {
       header: 'Photo',
       cell: (info) => (
         <div className="w-32 p-2">
@@ -64,21 +65,36 @@ export function DogTable({ dogs, total, next, prev }: DogTableProps) {
         </div>
       ),
     }),
-    columnHelper.accessor('name', {
+    columnHelper.accessor(row => row.dog.name, {
       header: 'Name',
       cell: (info) => <span className="text-base-content">{info.getValue()}</span>,
     }),
-    columnHelper.accessor('breed', {
+    columnHelper.accessor(row => row.dog.breed, {
       header: 'Breed',
       cell: (info) => <span className="text-base-content">{info.getValue()}</span>,
     }),
-    columnHelper.accessor('age', {
+    columnHelper.accessor(row => row.dog.age, {
       header: 'Age',
       cell: (info) => <span className="text-base-content">{info.getValue()}</span>,
     }),
-    columnHelper.accessor('zip_code', {
+    columnHelper.accessor(row => row.location, {
       header: 'Location',
-      cell: (info) => <span className="text-base-content">{info.getValue()}</span>,
+      cell: (info) => {
+        const location = info.getValue();
+        return (
+          <div className="flex flex-col gap-1">
+            <span className="text-base-content font-medium">
+              {location.city}, {location.state}
+            </span>
+            <span className="text-base-content/60 text-sm">
+              {location.county} County
+            </span>
+            <span className="text-base-content/60 text-sm">
+              {location.zip_code}
+            </span>
+          </div>
+        );
+      },
     })
   ];
 
@@ -99,16 +115,27 @@ export function DogTable({ dogs, total, next, prev }: DogTableProps) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 overflow-y-auto overflow-x-auto text-base-content">
+      
+      <div className="flex-none">
+        <Pagination 
+          prev={prev} 
+          next={next} 
+          handlePageChange={handlePageChange} 
+          dogs={dogs} 
+          total={total} 
+        />
+      </div>
+
+      <div className="mt-4 flex-1 overflow-y-auto overflow-x-auto text-base-content">
         <table className="table bg-base-100 w-full">
-          <thead className="bg-base-200 sticky top-0 z-30">
+          <thead className="bg-base-200 sticky top-0">
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header, index) => (
                   <th
                     key={header.id}
-                    className={`text-xs font-medium uppercase tracking-wider text-base-content
-                      ${index === 0 ? 'w-12 p-2 sm:static sticky left-0 bg-base-200 z-30 flex items-center justify-center' : 'text-left'}
+                    className={`text-xs font-medium uppercase tracking-wider text-base-content py-4
+                      ${index === 0 ? 'w-12 px-0 sm:static sticky left-0 bg-base-200 z-30 text-center' : 'text-left px-6'}
                       ${index === 1 ? 'w-32' : ''}`}
                   >
                     {flexRender(
@@ -124,7 +151,7 @@ export function DogTable({ dogs, total, next, prev }: DogTableProps) {
             {table.getRowModel().rows.map(row => (
               <tr 
                 key={row.id} 
-                onClick={handleRowClick(row.original.id)}
+                onClick={handleRowClick(row.original.dog.id)}
                 className="group hover:bg-base-200 cursor-pointer"
               >
                 {row.getVisibleCells().map((cell, index) => (
@@ -145,17 +172,6 @@ export function DogTable({ dogs, total, next, prev }: DogTableProps) {
           </tbody>
         </table>
       </div>
-      
-      {/* Pagination - stays at bottom */}
-      <div className="flex-none pt-4 border-t border-base-200">
-        <Pagination 
-          prev={prev} 
-          next={next} 
-          handlePageChange={handlePageChange} 
-          dogs={dogs} 
-          total={total} 
-        />
-      </div>
     </div>
   );
 }
@@ -163,7 +179,7 @@ export function DogTable({ dogs, total, next, prev }: DogTableProps) {
 const Pagination = (
   {prev, next, handlePageChange, dogs, total}:
   {prev: string | null, next: string | null, handlePageChange: (url: string | null) => void, 
-dogs: Dog[], total: number}) => {
+dogs: EnhancedDog[], total: number}) => {
 
   // Calculate the current range
   const pageSize = dogs.length;

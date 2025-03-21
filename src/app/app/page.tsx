@@ -1,5 +1,6 @@
 import DogSearch from "@/components/dog-search/DogSearch";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
+import { WelcomeModal } from "@/components/welcome/WelcomeModal";
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -8,7 +9,6 @@ export default async function AppPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  // Check authentication first
   const cookieStore = await cookies();
   if (!cookieStore.get('fetch-access-token')) {
     redirect('/login');
@@ -19,8 +19,13 @@ export default async function AppPage({
   return (
     <div className="w-full h-screen flex flex-col items-center bg-base-100">
       <FavoritesProvider>
-        <h1 className="text-2xl lg:text-4xl font-bold p-4 text-base-content px-4 flex-none">Find Your Perfect Dog</h1>
-        <DogSearch searchParams={resolvedParams} />
+        <div className="w-full py-3 px-4 flex items-center justify-center border-b border-base-200 flex-none">
+          <h1 className="text-xl font-semibold text-base-content">🐾 Find Your Perfect Dog</h1>
+        </div>
+        <div className="w-full max-w-7xl flex-1 overflow-hidden">
+          <DogSearch searchParams={resolvedParams} />
+        </div>
+        <WelcomeModal />
       </FavoritesProvider>
     </div>
   );
