@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { DogSearchParams, SortOn, SortOrder } from '@/lib/actions/dogs';
 import { useDebounceUrl } from '@/hooks/useDebounceUrl';
 import { queryStringToArray, arrayToQueryString } from '@/lib/utils/searchParams';
@@ -15,8 +15,8 @@ export function DogSearchFilters({ breeds }: DogSearchFiltersProps) {
     const initialBreeds = queryStringToArray(searchParams.get('breeds'));
     const [selectedBreeds, setSelectedBreeds] = useState<string[]>(initialBreeds);
     
-    const [ageMin, setAgeMin] = useState(searchParams.get('ageMin') || '');
-    const [ageMax, setAgeMax] = useState(searchParams.get('ageMax') || '');
+    const [ageMin, setAgeMin] = useState<string>(searchParams.get('ageMin') || '');
+    const [ageMax, setAgeMax] = useState<string>(searchParams.get('ageMax') || '');
     
     useEffect(() => {
         const urlBreeds = queryStringToArray(searchParams.get('breeds'));
@@ -24,7 +24,6 @@ export function DogSearchFilters({ breeds }: DogSearchFiltersProps) {
     }, [searchParams]);
 
     const currentSort = searchParams.get('sort') || 'breed:asc';
-    const [sortField, sortOrder] = currentSort.split(':') as [SortOn, SortOrder];
 
     const handleFilterChange = (key: string, value: string | string[] | number | undefined) => {
         const params = new URLSearchParams(searchParams.toString());
@@ -72,21 +71,37 @@ export function DogSearchFilters({ breeds }: DogSearchFiltersProps) {
         updateUrl(params);
     };
 
-    // Create a debounced version of handleAgeChange
-    const debouncedAgeChange = useCallback(
-        debounce((key: 'ageMin' | 'ageMax', value: string) => {
-            const params = new URLSearchParams(searchParams.toString());
-            params.delete('from');
-            
-            if (value === '') {
-                params.delete(key);
-            } else {
-                params.set(key, value);
-            }
+    // Move the type definitions outside the component
+    type DebouncedUpdateFn = ((searchParams: URLSearchParams, key: 'ageMin' | 'ageMax', value: string) => void) & { flush: () => void };
+    type UpdateParams = [URLSearchParams, 'ageMin' | 'ageMax', string];
+    type DebouncedAgeChangeFn = ((key: 'ageMin' | 'ageMax', value: string) => void) & { flush: () => void };
 
-            updateUrl(params);
-        }, 500),
-        [searchParams, updateUrl]
+    // In the component, update the useMemo:
+    const debouncedUpdate = useMemo<DebouncedUpdateFn>(() => {
+        // Move createDebouncedUpdate inside useMemo
+        return debounce<UpdateParams>(
+            (searchParams: URLSearchParams, key: 'ageMin' | 'ageMax', value: string) => {
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete('from');
+                
+                if (value === '') {
+                    params.delete(key);
+                } else {
+                    params.set(key, value);
+                }
+
+                updateUrl(params);
+            },
+            500
+        );
+    }, [updateUrl]);
+
+    // Create the function with proper typing
+    const debouncedAgeChange: DebouncedAgeChangeFn = Object.assign(
+        useCallback((key: 'ageMin' | 'ageMax', value: string) => {
+            debouncedUpdate(searchParams, key, value);
+        }, [debouncedUpdate, searchParams]),
+        { flush: () => debouncedUpdate.flush() }
     );
 
     // Update local state immediately and trigger debounced URL update
@@ -185,7 +200,7 @@ export function DogSearchFilters({ breeds }: DogSearchFiltersProps) {
                         placeholder="Min Age"
                         value={ageMin}
                         onChange={(e) => handleAgeInputChange('ageMin', e.target.value)}
-                        onBlur={(e) => debouncedAgeChange.flush()}
+                        onBlur={() => debouncedAgeChange.flush()}
                         className="input input-bordered w-24 text-base-content bg-base-100"
                     />
                     <span className="text-base-content">to</span>
@@ -195,7 +210,7 @@ export function DogSearchFilters({ breeds }: DogSearchFiltersProps) {
                         placeholder="Max Age"
                         value={ageMax}
                         onChange={(e) => handleAgeInputChange('ageMax', e.target.value)}
-                        onBlur={(e) => debouncedAgeChange.flush()}
+                        onBlur={() => debouncedAgeChange.flush()}
                         className="input input-bordered w-24 text-base-content bg-base-100"
                     />
                 </div>
@@ -262,14 +277,14 @@ export function parseSearchParams(params: { [key: string]: string | string[] | u
     };
 }
 
-// Add this debounce utility function at the top of the file
-function debounce<T extends (...args: any[]) => void>(
-    func: T,
+// Update the debounce function to use proper parameter types
+function debounce<Args extends unknown[]>(
+    func: (...args: Args) => void,
     wait: number
-): T & { flush: () => void } {
+): ((...args: Args) => void) & { flush: () => void } {
     let timeout: NodeJS.Timeout | null = null;
     
-    const debounced = (...args: Parameters<T>) => {
+    const debounced = (...args: Args) => {
         if (timeout) {
             clearTimeout(timeout);
         }
@@ -286,5 +301,5 @@ function debounce<T extends (...args: any[]) => void>(
         }
     };
 
-    return debounced as T & { flush: () => void };
+    return Object.assign(debounced, { flush: debounced.flush });
 }

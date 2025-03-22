@@ -1,56 +1,56 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
 import { Dog } from '@/lib/actions/dogs';
 import { Location } from '@/models/location';
-import { logout as serverLogout } from '@/lib/actions/auth';
 import { LINKEDIN_URL, GITHUB_URL } from '@/data/links';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { clientLogout } from '@/lib/client/auth';
+import Image from 'next/image';
 
 interface MatchAnimationProps {
   matchedDog: Dog;
   location: Location;
 }
 
+// Move phaseMessages outside the component
+const phaseMessages = {
+    phase1: [
+        "You looked long and hard, far and wide...",
+        "Searching through countless wagging tails...",
+        "Sniffing out the perfect companion...",
+        "Pawing through endless possibilities...",
+    ],
+    phase2: [
+        "We are finding the perfect match for you...",
+        "Our tails are wagging with excitement...",
+        "Getting closer to your furry soulmate...",
+        "The stars are aligning for this match...",
+    ],
+    phase3: [
+        "I think this one is choosing YOU!",
+        "Look who's ready to meet you!",
+        "This pup can't wait to say hello!",
+        "A perfect match is about to happen!",
+        "Someone special has picked you!"
+    ]
+} as const;
+
 export function MatchAnimation({ matchedDog, location }: MatchAnimationProps) {
   const [step, setStep] = useState(0);
   const [messages, setMessages] = useState<string[]>(['', '', '']); // Initialize with empty strings
   const router = useRouter();
 
-  const phaseMessages = {
-    phase1: [
-      "You looked long and hard, far and wide...",
-      "Searching through countless wagging tails...",
-      "Sniffing out the perfect companion...",
-      "Pawing through endless possibilities...",
-    ],
-    phase2: [
-      "We are finding the perfect match for you...",
-      "Our tails are wagging with excitement...",
-      "Getting closer to your furry soulmate...",
-      "The stars are aligning for this match...",
-    ],
-    phase3: [
-      "I think this one is choosing YOU!",
-      "Look who's ready to meet you!",
-      "This pup can't wait to say hello!",
-      "A perfect match is about to happen!",
-      "Someone special has picked you!"
-    ]
-  };
-
-  // Get random message for each phase
-  const getRandomMessage = (phase: number) => {
+  const getRandomMessage = useCallback((phase: number) => {
     const messages = phase === 0 ? phaseMessages.phase1 : 
                     phase === 1 ? phaseMessages.phase2 : 
                     phaseMessages.phase3;
     const randomIndex = Math.floor(Math.random() * messages.length);
     return messages[randomIndex];
-  };
+  }, []);
 
   useEffect(() => {
     // Generate messages on the client side only
@@ -59,7 +59,7 @@ export function MatchAnimation({ matchedDog, location }: MatchAnimationProps) {
       getRandomMessage(1),
       getRandomMessage(2)
     ]);
-  }, [matchedDog.id]); // Reset messages when dog changes
+  }, [matchedDog.id, getRandomMessage]);
 
   const triggerConfetti = () => {
     confetti({
@@ -71,27 +71,15 @@ export function MatchAnimation({ matchedDog, location }: MatchAnimationProps) {
 
   useEffect(() => {
     const timeouts = [
-      setTimeout(() => setStep(1), 2000),    // Phase 1: 2 seconds (was 3)
-      setTimeout(() => setStep(2), 5000),    // Phase 2: 3 seconds (was 4)
-      setTimeout(() => setStep(3), 8000),    // Phase 3: 3 seconds (was 4)
-      setTimeout(() => setStep(4), 9000)     // Final fade: 1 second (was 2)
+      setTimeout(() => setStep(1), 2000),
+      setTimeout(() => setStep(2), 5000),
+      setTimeout(() => setStep(3), 8000),
+      setTimeout(() => setStep(4), 9000)
     ];
 
     setStep(0);
     return () => timeouts.forEach(clearTimeout);
-  }, [matchedDog.id]);
-
-  // Add this function to reset and replay animation
-  const resetAnimation = () => {
-    // Reset step to trigger animation
-    setStep(0);
-    // Generate new messages
-    setMessages([
-      getRandomMessage(0),
-      getRandomMessage(1),
-      getRandomMessage(2)
-    ]);
-  };
+  }, [matchedDog.id, getRandomMessage]);
 
   if (step < 4) {
     return (
@@ -182,10 +170,13 @@ export function MatchAnimation({ matchedDog, location }: MatchAnimationProps) {
           whileHover={{ scale: 1.02 }}
           className="aspect-square w-full relative rounded-xl overflow-hidden shadow-xl"
         >
-          <img 
+          <Image 
             src={matchedDog.img} 
             alt={matchedDog.name}
+            width={500}
+            height={500}
             className="object-cover w-full h-full"
+            priority
           />
         </motion.div>
         
@@ -320,10 +311,10 @@ export function MatchAnimation({ matchedDog, location }: MatchAnimationProps) {
         <div className="modal-box text-base-content">
           <h3 className="font-bold text-lg mb-4">👋 Hi there!</h3>
           <p className="py-2">
-            I'm glad you enjoyed this sample project! I built it to showcase modern Next.js and React patterns, as well as user experience design.
+            I&apos;m glad you enjoyed this sample project! I built it to showcase modern Next.js and React patterns, as well as user experience design.
           </p>
           <p className="py-2">
-            If you'd like to connect or discuss opportunities, you can find me here:
+            If you&apos;d like to connect or discuss opportunities, you can find me here:
           </p>
           <div className="flex flex-col gap-2 my-4">
             <a 

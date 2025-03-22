@@ -2,11 +2,15 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 
-interface WelcomeContextType {
+export const WelcomeContext = createContext<{
+    hasSeenWelcome: boolean;
+    setHasSeenWelcome: (value: boolean) => void;
     showWelcome: () => void;
-}
-
-const WelcomeContext = createContext<WelcomeContextType | undefined>(undefined);
+}>({
+    hasSeenWelcome: false,
+    setHasSeenWelcome: () => {},
+    showWelcome: () => {}
+});
 
 export function WelcomeProvider({ children }: { children: React.ReactNode }) {
     const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
@@ -28,7 +32,11 @@ export function WelcomeProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <WelcomeContext.Provider value={{ showWelcome }}>
+        <WelcomeContext.Provider value={{ 
+            hasSeenWelcome, 
+            setHasSeenWelcome,
+            showWelcome
+        }}>
             {children}
         </WelcomeContext.Provider>
     );

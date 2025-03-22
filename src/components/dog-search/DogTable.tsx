@@ -10,6 +10,7 @@ import { EnhancedDog } from '@/models/enhanced-dog';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 interface DogTableProps {
   dogs: EnhancedDog[];
@@ -102,10 +103,13 @@ export function DogTable({ dogs, total, next, prev }: DogTableProps) {
       header: 'Photo',
       cell: (info) => (
         <div className="w-32 p-2">
-          <img 
-            src={info.getValue()} 
-            alt="Dog" 
-            className="w-28 h-28 object-cover rounded"
+          <Image
+            src={info.getValue()}
+            alt={info.row.original.dog.name}
+            width={100}
+            height={100}
+            className="object-cover w-full h-full"
+            priority={info.row.index < 4}
           />
         </div>
       ),
