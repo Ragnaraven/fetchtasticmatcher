@@ -16,12 +16,12 @@ export function WelcomeProvider({ children }: { children: React.ReactNode }) {
     const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
 
     useEffect(() => {
-        const hasSeenWelcomeThisVisit = localStorage.getItem('hasSeenWelcome');
+        const hasSeenWelcomeThisVisit = sessionStorage.getItem('hasSeenWelcome');
         if (!hasSeenWelcomeThisVisit) {
             const modal = document.getElementById('welcome_modal') as HTMLDialogElement;
             if (modal) {
                 modal.showModal();
-                localStorage.setItem('hasSeenWelcome', 'true');
+                sessionStorage.setItem('hasSeenWelcome', 'true');
             }
         }
     }, []);
