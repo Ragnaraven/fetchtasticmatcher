@@ -181,7 +181,7 @@ export function DogSearchFilters({ breeds }: DogSearchFiltersProps) {
                             <div key={breed} className="badge badge-primary gap-2 shrink-0">
                                 {breed}
                                 <button
-                                    className="btn btn-ghost btn-xs"
+                                    className="btn btn-ghost btn-xs hover:bg-secondary/25"
                                     onClick={() => handleBreedChange(breed, false)}
                                 >
                                     ×

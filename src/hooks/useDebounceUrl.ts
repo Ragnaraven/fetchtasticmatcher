@@ -20,7 +20,7 @@ export function useDebounceUrl(delay: number = 500) {
     }, delay);
 
     setDebouncedUpdate(timeout);
-  }, [router, delay]);
+  }, [router, delay, debouncedUpdate]);
 
   // Cleanup on unmount
   useEffect(() => {

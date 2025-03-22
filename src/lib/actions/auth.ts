@@ -42,17 +42,17 @@ export async function login(formData: FormData) {
     const setCookieHeader = response.headers.get('set-cookie');
     
     if (setCookieHeader) {
-        const cookieParams = setCookieHeader.split(';').reduce((acc: any, param) => {
+        const cookieParams = setCookieHeader.split(';').reduce((acc: Record<string, string>, param) => {
             const [key, value] = param.trim().split('=');
-            acc[key.toLowerCase()] = value || true;
+            acc[key.toLowerCase()] = value || '';
             return acc;
         }, {});
         
         const cookieValue = cookieParams['fetch-access-token'];
         
         cookieStore.set('fetch-access-token', cookieValue, {
-            secure: cookieParams['secure'] !== undefined,
-            httpOnly: cookieParams['httponly'] !== undefined,
+            secure: cookieParams['secure'] === 'true',
+            httpOnly: cookieParams['httponly'] === 'true',
             sameSite: (cookieParams['samesite'] || 'lax') as 'lax' | 'strict' | 'none',
             path: cookieParams['path'] || '/',
             expires: cookieParams['expires'] ? new Date(cookieParams['expires']) : undefined
@@ -60,7 +60,7 @@ export async function login(formData: FormData) {
     }
 
     authed = true;
-  } catch (error) {
+  } catch {
     authed = false;
   }
 
@@ -93,17 +93,17 @@ export async function refreshAuth(): Promise<boolean> {
         const setCookieHeader = response.headers.get('set-cookie');
         
         if (setCookieHeader) {
-            const cookieParams = setCookieHeader.split(';').reduce((acc: any, param) => {
+            const cookieParams = setCookieHeader.split(';').reduce((acc: Record<string, string>, param) => {
                 const [key, value] = param.trim().split('=');
-                acc[key.toLowerCase()] = value || true;
+                acc[key.toLowerCase()] = value || '';
                 return acc;
             }, {});
             
             const cookieValue = cookieParams['fetch-access-token'];
             
             cookieStore.set('fetch-access-token', cookieValue, {
-                secure: cookieParams['secure'] !== undefined,
-                httpOnly: cookieParams['httponly'] !== undefined,
+                secure: cookieParams['secure'] === 'true',
+                httpOnly: cookieParams['httponly'] === 'true',
                 sameSite: (cookieParams['samesite'] || 'lax') as 'lax' | 'strict' | 'none',
                 path: cookieParams['path'] || '/',
                 expires: cookieParams['expires'] ? new Date(cookieParams['expires']) : undefined
@@ -111,8 +111,7 @@ export async function refreshAuth(): Promise<boolean> {
         }
 
         return true;
-    } catch (error) {
-        console.error('[refreshAuth] Error:', error);
+    } catch {
         return false;
     }
 }
@@ -135,8 +134,13 @@ export async function logout() {
     lastLoginCredentials = null;
     
     return { success: true };
-  } catch (error) {
-    console.error('[logout] Error:', error);
-    throw error;
+  } catch {
+    return {
+        success: false,
+        error: {
+            message: 'Logout failed',
+            status: 500
+        }
+    };
   }
 }
