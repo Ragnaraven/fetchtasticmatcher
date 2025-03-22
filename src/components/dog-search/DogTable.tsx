@@ -7,10 +7,9 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { EnhancedDog } from '@/models/enhanced-dog';
-import { useFavorites } from '../../contexts/FavoritesContext';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
 
 interface DogTableProps {
   dogs: EnhancedDog[];
@@ -19,16 +18,60 @@ interface DogTableProps {
   prev: string | null;
 }
 
+const STORAGE_KEY = 'dog-favorites';
+const MAX_FAVORITES = 100;
+
 export function DogTable({ dogs, total, next, prev }: DogTableProps) {
-  const { favorites, toggleFavorite, generateMatch } = useFavorites();
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const router = useRouter();
 
-  const handleRowClick = (dogId: string) => (e: React.MouseEvent) => {
-    // Don't trigger if clicking the favorite button itself
-    if ((e.target as HTMLElement).closest('.btn-circle')) {
+  // Load favorites from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      setFavorites(new Set(JSON.parse(stored)));
+    }
+  }, []);
+
+  const toggleFavorite = (dogId: string) => {
+    setFavorites(prev => {
+      const next = new Set(prev);
+      if (next.has(dogId)) {
+        next.delete(dogId);
+      } else if (next.size >= MAX_FAVORITES) {
+        alert(`Maximum of ${MAX_FAVORITES} favorites reached`);
+        return prev;
+      } else {
+        next.add(dogId);
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(next)));
+      return next;
+    });
+  };
+
+  const handleMatch = async () => {
+    const favoriteIds = Array.from(favorites);
+    if (favoriteIds.length === 0) {
+      alert('Please select at least one favorite dog');
       return;
     }
-    toggleFavorite(dogId);
+    
+    try {
+      const response = await fetch('/api/matchmake', {
+        method: 'POST',
+        body: JSON.stringify({ favorites: favoriteIds }),
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        redirect: 'follow', // Ensure we follow redirects
+      });
+      
+      // The browser will automatically follow the redirect
+      window.location.href = response.url;
+    } catch (error) {
+      console.error('Error generating match:', error);
+      alert('Unable to generate match. Please try again.');
+    }
   };
 
   const columnHelper = createColumnHelper<EnhancedDog>();
@@ -128,6 +171,7 @@ export function DogTable({ dogs, total, next, prev }: DogTableProps) {
           handlePageChange={handlePageChange} 
           dogs={dogs} 
           total={total} 
+          favorites={favorites}
         />
       </div>
 
@@ -167,7 +211,7 @@ export function DogTable({ dogs, total, next, prev }: DogTableProps) {
                     duration: 0.3,
                     delay: index * 0.05 // Stagger effect
                   }}
-                  onClick={handleRowClick(row.original.dog.id)}
+                  onClick={() => toggleFavorite(row.original.dog.id)}
                   className="group hover:bg-base-200 cursor-pointer"
                 >
                   {row.getVisibleCells().map((cell, index) => (
@@ -202,7 +246,7 @@ export function DogTable({ dogs, total, next, prev }: DogTableProps) {
             <motion.button 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => generateMatch()}
+              onClick={handleMatch}
               className="btn btn-primary border-1 border-base-content btn-xl shadow-lg text-lg font-medium gap-2 min-w-80 relative overflow-hidden"
             >
               <motion.span 
@@ -269,9 +313,9 @@ export function DogTable({ dogs, total, next, prev }: DogTableProps) {
 }
 
 const Pagination = (
-  {prev, next, handlePageChange, dogs, total}:
+  {prev, next, handlePageChange, dogs, total, favorites}:
   {prev: string | null, next: string | null, handlePageChange: (url: string | null) => void, 
-dogs: EnhancedDog[], total: number}) => {
+dogs: EnhancedDog[], total: number, favorites: Set<string>}) => {
 
   // Calculate the current range
   const pageSize = dogs.length;
@@ -287,7 +331,13 @@ dogs: EnhancedDog[], total: number}) => {
       >
         Previous
       </button>
-      <PaginationInfo className="text-base-content hidden sm:block text-center flex-1 px-4" currentStart={currentStart} currentEnd={currentEnd} total={total} />
+      <PaginationInfo 
+        className="text-base-content hidden sm:block text-center flex-1 px-4" 
+        currentStart={currentStart} 
+        currentEnd={currentEnd} 
+        total={total}
+        favoriteCount={favorites.size}
+      />
       <button 
         disabled={!next}
         onClick={() => handlePageChange(next)}
@@ -297,21 +347,37 @@ dogs: EnhancedDog[], total: number}) => {
       </button>
     </div>
     
-    <PaginationInfo className="text-base-content sm:hidden text-center w-full" currentStart={currentStart} currentEnd={currentEnd} total={total} />
+    <PaginationInfo 
+      className="text-base-content sm:hidden text-center w-full" 
+      currentStart={currentStart} 
+      currentEnd={currentEnd} 
+      total={total}
+      favoriteCount={favorites.size}
+    />
   </div>;
 }
 
-const PaginationInfo = ({className, currentStart, currentEnd, total}: {className: string, currentStart: number, currentEnd: number, total: number}) => {
-  const { favorites } = useFavorites();
-
+const PaginationInfo = ({
+  className, 
+  currentStart, 
+  currentEnd, 
+  total,
+  favoriteCount
+}: {
+  className: string, 
+  currentStart: number, 
+  currentEnd: number, 
+  total: number,
+  favoriteCount: number
+}) => {
   return (
     <div className={className}>
       <span>
         {total > 0 ? `Showing ${currentStart}-${currentEnd} of ${total.toLocaleString()} dogs` : 'No dogs found. Please try different filters.'}
       </span>
       <span className="ml-8">
-        {`${favorites.size} ${favorites.size === 1 ? 'dog' : 'dogs'} favorited`}
+        {`${favoriteCount} ${favoriteCount === 1 ? 'dog' : 'dogs'} favorited`}
       </span>
     </div>
   );
-}
+};

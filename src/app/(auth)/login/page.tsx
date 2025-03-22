@@ -16,7 +16,7 @@ export default async function LoginPage() {
             Welcome to FetchtasticMatch
           </h1>
           <p className="text-base-content/70 font-body">
-            Let's find your perfect companion
+            Let&apos;s find your perfect companion
           </p>
         </div>
 

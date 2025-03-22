@@ -132,8 +132,9 @@ export async function logout() {
     }
 
     cookieStore.delete('fetch-access-token');
+    lastLoginCredentials = null;
     
-    redirect('/');
+    return { success: true };
   } catch (error) {
     console.error('[logout] Error:', error);
     throw error;

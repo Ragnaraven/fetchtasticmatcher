@@ -19,7 +19,7 @@ export default function Home() {
 
         <p className="text-xl text-base-content/80 mb-8 text-justify">
           Every dog deserves a loving home, and every home deserves the perfect dog. 
-          Let's help you find your ideal companion among thousands of adorable pups 
+          Let&apos;s help you find your ideal companion among thousands of adorable pups 
           waiting to meet you.
         </p>
 

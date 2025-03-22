@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Quicksand, Space_Grotesk } from "next/font/google";
-import { FavoritesProvider } from "@/contexts/FavoritesContext";
+import { WelcomeProvider } from "@/contexts/WelcomeContext";
 import "./globals.css";
 
 const bodyFont = Quicksand({
@@ -31,9 +31,9 @@ export default function RootLayout({
       <body
         className={`${bodyFont.variable} ${titleFont.variable} font-body antialiased min-h-screen`}
       >
-        <FavoritesProvider>
+        <WelcomeProvider>
           {children}
-        </FavoritesProvider>
+        </WelcomeProvider>
       </body>
     </html>
   );

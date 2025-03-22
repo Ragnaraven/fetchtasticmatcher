@@ -5,19 +5,21 @@ import Link from 'next/link';
 import confetti from 'canvas-confetti';
 import { Dog } from '@/lib/actions/dogs';
 import { Location } from '@/models/location';
-import { logout } from '@/lib/actions/auth';
+import { logout as serverLogout } from '@/lib/actions/auth';
 import { LINKEDIN_URL, GITHUB_URL } from '@/data/links';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { clientLogout } from '@/lib/client/auth';
 
 interface MatchAnimationProps {
   matchedDog: Dog;
   location: Location;
-  favorites: string;
 }
 
-export function MatchAnimation({ matchedDog, location, favorites }: MatchAnimationProps) {
+export function MatchAnimation({ matchedDog, location }: MatchAnimationProps) {
   const [step, setStep] = useState(0);
   const [messages, setMessages] = useState<string[]>(['', '', '']); // Initialize with empty strings
+  const router = useRouter();
 
   const phaseMessages = {
     phase1: [
@@ -69,15 +71,27 @@ export function MatchAnimation({ matchedDog, location, favorites }: MatchAnimati
 
   useEffect(() => {
     const timeouts = [
-      setTimeout(() => setStep(1), 3000),    // Phase 1: 3 seconds
-      setTimeout(() => setStep(2), 7000),    // Phase 2: 4 seconds
-      setTimeout(() => setStep(3), 11000),   // Phase 3: 4 seconds (reduced from 5)
-      setTimeout(() => setStep(4), 12000)    // Final fade: 2 seconds
+      setTimeout(() => setStep(1), 2000),    // Phase 1: 2 seconds (was 3)
+      setTimeout(() => setStep(2), 5000),    // Phase 2: 3 seconds (was 4)
+      setTimeout(() => setStep(3), 8000),    // Phase 3: 3 seconds (was 4)
+      setTimeout(() => setStep(4), 9000)     // Final fade: 1 second (was 2)
     ];
 
     setStep(0);
     return () => timeouts.forEach(clearTimeout);
   }, [matchedDog.id]);
+
+  // Add this function to reset and replay animation
+  const resetAnimation = () => {
+    // Reset step to trigger animation
+    setStep(0);
+    // Generate new messages
+    setMessages([
+      getRandomMessage(0),
+      getRandomMessage(1),
+      getRandomMessage(2)
+    ]);
+  };
 
   if (step < 4) {
     return (
@@ -137,8 +151,8 @@ export function MatchAnimation({ matchedDog, location, favorites }: MatchAnimati
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{
-                      duration: 0.05,
-                      delay: index * 0.05,
+                      duration: 0.035,  // Was 0.05
+                      delay: index * 0.035,  // Was 0.05
                       ease: "easeOut"
                     }}
                   >
@@ -264,17 +278,40 @@ export function MatchAnimation({ matchedDog, location, favorites }: MatchAnimati
           
           <div className="flex gap-4">
             <Link 
-              href={`/app?favorites=${favorites}`}
+              href="/app"
               className="btn btn-outline text-base-content border-base-content"
             >
               Back to Search
             </Link>
-            <Link 
-              href={`/app/match?favorites=${favorites}`}
+            <button 
+              onClick={async () => {
+                const stored = localStorage.getItem('dog-favorites');
+                if (stored) {
+                  const favoriteIds = JSON.parse(stored);
+                  try {
+                    const response = await fetch('/api/matchmake', {
+                      method: 'POST',
+                      body: JSON.stringify({ favorites: favoriteIds }),
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      redirect: 'follow', // Ensure we follow redirects
+                    });
+                    
+                    // The browser will automatically follow the redirect
+                    window.location.href = response.url;
+                  } catch (error) {
+                    console.error('Error generating match:', error);
+                    router.push('/app');
+                  }
+                } else {
+                  router.push('/app');
+                }
+              }}
               className="btn btn-primary"
             >
               Try Another Match
-            </Link>
+            </button>
           </div>
         </motion.div>
       </motion.div>
@@ -323,7 +360,16 @@ export function MatchAnimation({ matchedDog, location, favorites }: MatchAnimati
             </a>
           </div>
           <div className="modal-action flex justify-between items-center">
-            <form action={logout}>
+            <form action={async () => {
+              try {
+                const result = await clientLogout();
+                if (result.success) {
+                  router.push('/');
+                }
+              } catch (error) {
+                console.error('Logout failed:', error);
+              }
+            }}>
               <button 
                 type="submit"
                 className="btn btn-error btn-outline"

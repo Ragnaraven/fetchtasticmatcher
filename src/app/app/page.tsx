@@ -1,5 +1,4 @@
 import DogSearch from "@/components/dog-search/DogSearch";
-import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { WelcomeProvider } from "@/contexts/WelcomeContext";
 import { WelcomeModal } from "@/components/welcome/WelcomeModal";
 import { AppHeader } from "@/components/header/AppHeader";
@@ -21,13 +20,11 @@ export default async function AppPage({
   return (
     <div className="w-full h-screen flex flex-col items-center bg-base-100">
       <WelcomeProvider>
-        <FavoritesProvider>
-          <AppHeader />
-          <div className="w-full max-w-7xl flex-1 overflow-hidden">
-            <DogSearch searchParams={resolvedParams} />
-          </div>
-          <WelcomeModal />
-        </FavoritesProvider>
+        <AppHeader />
+        <div className="w-full max-w-7xl flex-1 overflow-hidden">
+          <DogSearch searchParams={resolvedParams} />
+        </div>
+        <WelcomeModal />
       </WelcomeProvider>
     </div>
   );
